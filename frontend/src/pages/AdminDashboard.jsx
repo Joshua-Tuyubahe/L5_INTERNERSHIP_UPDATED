@@ -12,6 +12,7 @@ function AdminDashboard() {
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
+  const [feedbacks, setFeedbacks] = useState([]);
 
   async function fetchUsers() {
     try {
@@ -67,10 +68,41 @@ function AdminDashboard() {
     }
   }
 
+  async function fetchFeedbacks() {
+    try {
+      const response = await fetch('/api/feedback', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) {
+        if (response.status === 404) {
+          setMessage('Feedback endpoint not found. Check that GET /api/feedback exists on the backend.');
+          return;
+        }
+        let errorData = null;
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          try {
+            errorData = await response.json();
+          } catch (parseError) {
+            console.error('Failed to parse feedback error response JSON:', parseError);
+          }
+        }
+        setMessage(errorData?.message || `Error loading feedbacks (${response.status})`);
+        return;
+      }
+      const data = await response.json();
+      setFeedbacks(data);
+    } catch (error) {
+      setMessage('Network error while loading feedbacks.');
+      console.error('Fetch feedbacks error:', error);
+    }
+  }
+
   useEffect(() => {
     fetchUsers();
     fetchOrders();
     fetchFoodItems();
+    fetchFeedbacks();
   }, []);
 
   async function handleAddFood(event) {
@@ -373,6 +405,51 @@ function AdminDashboard() {
                         Delete
                       </button>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section className="card">
+          <h3>User Feedbacks</h3>
+          {feedbacks.length === 0 ? (
+            <p>No feedbacks received yet.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Type</th>
+                  <th>Rating</th>
+                  <th>Message</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {feedbacks.map((feedback) => (
+                  <tr key={feedback._id}>
+                    <td>{feedback.userId?.name || 'Unknown'}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{feedback.type}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            style={{
+                              color: star <= feedback.rating ? '#ffd700' : '#ddd',
+                              fontSize: '16px'
+                            }}
+                          >
+                            ★
+                          </span>
+                        ))}
+                        <span style={{ marginLeft: '8px' }}>{feedback.rating}/5</span>
+                      </div>
+                    </td>
+                    <td style={{ maxWidth: '300px', wordWrap: 'break-word' }}>{feedback.message}</td>
+                    <td>{new Date(feedback.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>

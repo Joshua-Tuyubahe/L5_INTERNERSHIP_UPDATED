@@ -8,6 +8,9 @@ function UserDashboard() {
   const [message, setMessage] = useState('');
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [editQuantity, setEditQuantity] = useState(1);
+  const [feedbackType, setFeedbackType] = useState('delay');
+  const [feedbackRating, setFeedbackRating] = useState(3);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
   const name = localStorage.getItem('name') || 'User';
 
   async function fetchFood() {
@@ -133,6 +136,56 @@ function UserDashboard() {
     }
   }
 
+  async function handleSubmitFeedback(event) {
+    event.preventDefault();
+    setMessage('');
+    
+    if (!feedbackMessage.trim()) {
+      setMessage('Please enter a feedback message');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          type: feedbackType,
+          rating: feedbackRating,
+          message: feedbackMessage
+        })
+      });
+      let data = null;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('Failed to parse feedback response JSON:', parseError);
+        }
+      }
+
+      if (response.ok) {
+        setMessage('Feedback submitted successfully');
+        setFeedbackMessage('');
+        setFeedbackRating(3);
+      } else if (response.status === 404) {
+        setMessage('Feedback endpoint not found. Check that POST /api/feedback exists on the backend.');
+      } else {
+        setMessage(
+          data?.message ||
+            `Unable to submit feedback. Server responded with status ${response.status} ${response.statusText}`
+        );
+      }
+    } catch (error) {
+      setMessage('Network error while submitting feedback.');
+      console.error('Submit feedback error:', error);
+    }
+  }
+
   function startEditOrder(order) {
     setEditingOrderId(order._id);
     setEditQuantity(order.quantity || 1);
@@ -237,6 +290,62 @@ function UserDashboard() {
               )}
             </>
           )}
+        </section>
+
+        <section className="card">
+          <h3>Send Feedback to Admin</h3>
+          <form onSubmit={handleSubmitFeedback} className="form-grid">
+            <label>
+              Feedback Type
+              <select value={feedbackType} onChange={(e) => setFeedbackType(e.target.value)}>
+                <option value="delay">Delay Feedback</option>
+                <option value="quality">Food Quality</option>
+                <option value="service">Service</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>
+              Rating (1-5)
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFeedbackRating(star)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '24px',
+                      cursor: 'pointer',
+                      color: star <= feedbackRating ? '#ffd700' : '#ddd'
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+                <span style={{ marginLeft: '10px' }}>{feedbackRating}/5</span>
+              </div>
+            </label>
+            <label>
+              Message
+              <textarea
+                value={feedbackMessage}
+                onChange={(e) => setFeedbackMessage(e.target.value)}
+                placeholder="Please describe your feedback..."
+                rows="4"
+                required
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  resize: 'vertical'
+                }}
+              />
+            </label>
+            <button type="submit">Submit Feedback</button>
+          </form>
+          {message && <div className="message">{message}</div>}
         </section>
       </div>
     </div>
