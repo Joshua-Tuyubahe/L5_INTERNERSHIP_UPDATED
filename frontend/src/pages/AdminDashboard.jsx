@@ -247,215 +247,320 @@ function AdminDashboard() {
     <div>
       <Navbar role="admin" />
       <div className="page-content">
-        <section className="summary-grid">
-          <div className="summary-card">
+        <div className="hero-card fade-in">
+          <h1>Admin Dashboard</h1>
+          <p>Manage your food delivery system efficiently</p>
+        </div>
+
+        <div className="report-grid">
+          <div className="stat-card">
             <h4>Total Users</h4>
-            <p>{users.length}</p>
+            <div className="stat-number">{users.length}</div>
+            <div className="stat-meta">Registered accounts</div>
           </div>
-          <div className="summary-card">
+          <div className="stat-card">
             <h4>Total Orders</h4>
-            <p>{orders.length}</p>
+            <div className="stat-number">{orders.length}</div>
+            <div className="stat-meta">All time orders</div>
           </div>
-          <div className="summary-card">
+          <div className="stat-card highlight">
             <h4>Total Revenue</h4>
-            <p>${totalRevenue.toFixed(2)}</p>
+            <div className="stat-number">${totalRevenue.toFixed(2)}</div>
+            <div className="stat-meta">Revenue generated</div>
           </div>
-        </section>
+        </div>
 
-        <section className="card">
-          <h3>Add Food Item</h3>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">🍽️ Add Food Item</h2>
+            <p className="card-subtitle">Add new items to your menu</p>
+          </div>
           <form onSubmit={handleAddFood} className="form-grid">
-            <label>
-              Name
-              <input value={foodName} onChange={(e) => setFoodName(e.target.value)} required />
-            </label>
-            <label>
-              Price
-              <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" step="0.01" required />
-            </label>
-            <button type="submit">Add Food</button>
+            <div className="form-group">
+              <label className="form-label">Food Name</label>
+              <input
+                className="form-control"
+                value={foodName}
+                onChange={(e) => setFoodName(e.target.value)}
+                placeholder="Enter food name"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Price ($)</label>
+              <input
+                className="form-control"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">Add Food Item</button>
+            </div>
           </form>
-          {message && <div className="message">{message}</div>}
-        </section>
+          {message && message.includes('Food item added') && (
+            <div className="message success fade-in">{message}</div>
+          )}
+          {message && !message.includes('Food item added') && !message.includes('updated') && !message.includes('deleted') && (
+            <div className="message error fade-in">{message}</div>
+          )}
+        </div>
 
-        <section className="card">
-          <h3>Food Stock Management</h3>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">📦 Food Stock Management</h2>
+            <p className="card-subtitle">Manage your menu items and inventory</p>
+          </div>
           {editingFoodId ? (
-            <div className="edit-form-container">
-              <h4>Edit Food Item</h4>
+            <div>
+              <div className="card-header">
+                <h3 className="card-title">Edit Food Item</h3>
+              </div>
               <form onSubmit={handleUpdateFood} className="form-grid">
-                <label>
-                  Name
-                  <input value={editName} onChange={(e) => setEditName(e.target.value)} required />
-                </label>
-                <label>
-                  Price
-                  <input value={editPrice} onChange={(e) => setEditPrice(e.target.value)} type="number" step="0.01" required />
-                </label>
-                <label>
-                  Quantity
-                  <input value={editQuantity} onChange={(e) => setEditQuantity(e.target.value)} type="number" required />
-                </label>
-                <div className="form-inline">
-                  <button type="submit">Update Food</button>
-                  <button type="button" className="button-secondary" onClick={handleCancelEdit}>Cancel</button>
+                <div className="form-group">
+                  <label className="form-label">Food Name</label>
+                  <input
+                    className="form-control"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Enter food name"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Price ($)</label>
+                  <input
+                    className="form-control"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Quantity</label>
+                  <input
+                    className="form-control"
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(e.target.value)}
+                    type="number"
+                    placeholder="0"
+                    required
+                  />
+                </div>
+                <div className="form-actions">
+                  <button type="submit" className="btn btn-primary">Update Food</button>
+                  <button type="button" className="btn btn-secondary" onClick={handleCancelEdit}>Cancel</button>
                 </div>
               </form>
-              {message && <div className="message">{message}</div>}
             </div>
           ) : (
             <>
               {foodItems.length === 0 ? (
-                <p>No food items added yet.</p>
+                <p className="text-secondary text-center">No food items added yet. Add your first item above!</p>
               ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Price</th>
-                      <th>Quantity</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {foodItems.map((food) => (
-                      <tr key={food._id}>
-                        <td>{food.name}</td>
-                        <td>${food.price.toFixed(2)}</td>
-                        <td>{food.quantity || 0}</td>
-                        <td>
-                          <button className="btn-edit" onClick={() => handleEditFood(food)}>
-                            Edit
-                          </button>
-                          <button className="btn-delete" onClick={() => handleDeleteFood(food._id)}>
-                            Delete
-                          </button>
-                        </td>
+                <div className="table-container">
+                  <table className="styled-table">
+                    <thead>
+                      <tr>
+                        <th>Food Name</th>
+                        <th>Price</th>
+                        <th>Stock Quantity</th>
+                        <th>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {foodItems.map((food) => (
+                        <tr key={food._id}>
+                          <td className="font-medium">{food.name}</td>
+                          <td className="font-semibold">${food.price.toFixed(2)}</td>
+                          <td>{food.quantity || 0}</td>
+                          <td>
+                            <div className="flex gap-2">
+                              <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => handleEditFood(food)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn btn-sm btn-accent"
+                                onClick={() => handleDeleteFood(food._id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-              {message && <div className="message">{message}</div>}
             </>
           )}
-        </section>
+          {(message.includes('updated') || message.includes('deleted')) && (
+            <div className={`message ${message.includes('success') ? 'success' : 'error'} fade-in`}>
+              {message}
+            </div>
+          )}
+        </div>
 
-        <section className="card">
-          <h3>Users</h3>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">👥 Registered Users</h2>
+            <p className="card-subtitle">Overview of all user accounts</p>
+          </div>
           {users.length === 0 ? (
-            <p>No users found.</p>
+            <p className="text-secondary text-center">No users registered yet.</p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user._id}>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.role}</td>
+            <div className="table-container">
+              <table className="styled-table">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Role</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user._id}>
+                      <td className="font-medium">{user.name}</td>
+                      <td className="text-secondary">{user.email}</td>
+                      <td>
+                        <span className={`status-badge ${
+                          user.role === 'admin' ? 'status-preparing' : 'status-delivered'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </section>
+        </div>
 
-        <section className="card">
-          <h3>Orders</h3>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">📋 Order Management</h2>
+            <p className="card-subtitle">Track and manage all customer orders</p>
+          </div>
           {orders.length === 0 ? (
-            <p>No orders yet.</p>
+            <p className="text-secondary text-center">No orders placed yet.</p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Food</th>
-                  <th>Quantity</th>
-                  <th>Total Price</th>
-                  <th>User</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order._id}>
-                    <td>{order.foodName}</td>
-                    <td>{order.quantity || 1}</td>
-                    <td>${(order.totalPrice || order.price).toFixed(2)}</td>
-                    <td>{order.userId?.name || 'Unknown'}</td>
-                    <td>
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      >
-                        <option>Pending</option>
-                        <option>Preparing</option>
-                        <option>Delivered</option>
-                      </select>
-                    </td>
-                    <td>
-                      <button className="button-secondary" onClick={() => handleDeleteOrder(order._id)}>
-                        Delete
-                      </button>
-                    </td>
+            <div className="table-container">
+              <table className="styled-table">
+                <thead>
+                  <tr>
+                    <th>Food Item</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order._id}>
+                      <td className="font-medium">{order.foodName}</td>
+                      <td>{order.quantity || 1}</td>
+                      <td className="font-semibold">${(order.totalPrice || order.price).toFixed(2)}</td>
+                      <td className="text-secondary">{order.userId?.name || 'Unknown'}</td>
+                      <td>
+                        <select
+                          className="form-select"
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                          style={{ minWidth: '120px' }}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="preparing">Preparing</option>
+                          <option value="delivered">Delivered</option>
+                        </select>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-accent"
+                          onClick={() => handleDeleteOrder(order._id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </section>
+        </div>
 
-        <section className="card">
-          <h3>User Feedbacks</h3>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">💬 User Feedback</h2>
+            <p className="card-subtitle">Customer reviews and suggestions</p>
+          </div>
           {feedbacks.length === 0 ? (
-            <p>No feedbacks received yet.</p>
+            <p className="text-secondary text-center">No feedback received yet.</p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Type</th>
-                  <th>Rating</th>
-                  <th>Message</th>
-                  <th>Date</th>
+            <div className="table-container">
+              <table className="styled-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Type</th>
+                    <th>Rating</th>
+                    <th>Message</th>
+                    <th>Date</th>
                 </tr>
-              </thead>
-              <tbody>
-                {feedbacks.map((feedback) => (
-                  <tr key={feedback._id}>
-                    <td>{feedback.userId?.name || 'Unknown'}</td>
-                    <td style={{ textTransform: 'capitalize' }}>{feedback.type}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span
-                            key={star}
-                            style={{
-                              color: star <= feedback.rating ? '#ffd700' : '#ddd',
-                              fontSize: '16px'
-                            }}
-                          >
-                            ★
-                          </span>
-                        ))}
-                        <span style={{ marginLeft: '8px' }}>{feedback.rating}/5</span>
-                      </div>
-                    </td>
-                    <td style={{ maxWidth: '300px', wordWrap: 'break-word' }}>{feedback.message}</td>
-                    <td>{new Date(feedback.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {feedbacks.map((feedback) => (
+                    <tr key={feedback._id}>
+                      <td className="font-medium">{feedback.userId?.name || 'Unknown'}</td>
+                      <td>
+                        <span className="status-badge status-preparing" style={{ textTransform: 'capitalize' }}>
+                          {feedback.type}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className="text-lg"
+                                style={{
+                                  color: star <= feedback.rating ? '#ffd700' : '#e2e8f0'
+                                }}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-secondary font-medium">{feedback.rating}/5</span>
+                        </div>
+                      </td>
+                      <td style={{ maxWidth: '300px', wordWrap: 'break-word' }} className="text-secondary">
+                        {feedback.message}
+                      </td>
+                      <td className="text-secondary">{new Date(feedback.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </section>
+        </div>
       </div>
     </div>
   );

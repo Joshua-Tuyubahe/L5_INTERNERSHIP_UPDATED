@@ -8,6 +8,8 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const foodRoutes = require('./routes/food');
 const orderRoutes = require('./routes/orders');
+const feedbackRoutes = require('./routes/feedback');
+const reportRoutes = require('./routes/reports');
 const User = require('./models/User');
 const Food = require('./models/Food');
 
@@ -33,6 +35,8 @@ app.use('/api', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/', (req, res) => {
   res.send('FD Management System API is running');

@@ -40,25 +40,56 @@ function Register() {
   return (
     <div className="page-center">
       <div className="card">
-        <h2>Register</h2>
+        <div className="card-header">
+          <h1 className="card-title">Create Account</h1>
+          <p className="card-subtitle">Join us to start ordering delicious food</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="form-grid">
-          <label>
-            Name
-            <input value={name} onChange={(e) => setName(e.target.value)} type="text" required />
-          </label>
-          <label>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-          </label>
-          <label>
-            Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
-          </label>
-          <button type="submit">Create Account</button>
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
+            <input
+              className="form-control"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              type="text"
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
+            <input
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input
+              className="form-control"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="Create a secure password"
+              required
+            />
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary btn-block">Create Account</button>
+          </div>
         </form>
-        {message && <div className="message">{message}</div>}
-        <p>
-          Already have an account? <Link to="/login">Login here</Link>
+        {message && (
+          <div className={`message ${message.includes('successful') ? 'success' : 'error'} fade-in`}>
+            {message}
+          </div>
+        )}
+        <p className="text-center text-secondary">
+          Already have an account? <Link to="/login" className="text-secondary font-medium">Sign in here</Link>
         </p>
       </div>
     </div>

@@ -195,158 +195,207 @@ function UserDashboard() {
     <div>
       <Navbar role="user" />
       <div className="page-content">
-        <section className="hero-card">
-          <h2>Welcome back, {name}</h2>
-          <p>Choose a food item and place your order.</p>
-        </section>
+        <div className="hero-card fade-in">
+          <h1>Welcome back, {name}</h1>
+          <p>Discover delicious food options and place your order with ease</p>
+        </div>
 
-        <section className="card">
-          <h3>Food Menu</h3>
-          <form onSubmit={handleOrder} className="form-inline">
-            <select value={selectedFoodId} onChange={(e) => setSelectedFoodId(e.target.value)}>
-              {foodItems.map((food) => (
-                <option key={food._id} value={food._id}>
-                  {food.name} - ${food.price.toFixed(2)}
-                </option>
-              ))}
-            </select>
-            <button type="submit">Place Order</button>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">🍽️ Food Menu</h2>
+            <p className="card-subtitle">Choose from our delicious selection</p>
+          </div>
+          <form onSubmit={handleOrder} className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Select Food Item</label>
+              <select
+                className="form-select"
+                value={selectedFoodId}
+                onChange={(e) => setSelectedFoodId(e.target.value)}
+              >
+                {foodItems.map((food) => (
+                  <option key={food._id} value={food._id}>
+                    {food.name} - ${food.price.toFixed(2)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">Place Order</button>
+            </div>
           </form>
-          {message && <div className="message">{message}</div>}
-        </section>
+          {message && message.includes('Order placed') && (
+            <div className="message success fade-in">{message}</div>
+          )}
+          {message && !message.includes('Order placed') && !message.includes('updated') && !message.includes('cancelled') && !message.includes('Feedback') && (
+            <div className="message error fade-in">{message}</div>
+          )}
+        </div>
 
-        <section className="card">
-          <h3>My Orders</h3>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">📋 My Orders</h2>
+            <p className="card-subtitle">Track and manage your food orders</p>
+          </div>
           {orders.length === 0 ? (
-            <p>No orders yet.</p>
+            <p className="text-secondary text-center">No orders yet. Place your first order above!</p>
           ) : (
             <>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Food</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order._id}>
-                      <td>{order.foodName}</td>
-                      <td>{order.quantity || 1}</td>
-                      <td>${(order.totalPrice || order.price).toFixed(2)}</td>
-                      <td>{order.status}</td>
-                      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <button 
-                          className="btn-edit" 
-                          onClick={() => startEditOrder(order)}
-                          style={{ marginRight: '8px' }}
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          className="btn-delete" 
-                          onClick={() => handleDeleteOrder(order._id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
+              <div className="table-container">
+                <table className="styled-table">
+                  <thead>
+                    <tr>
+                      <th>Food Item</th>
+                      <th>Quantity</th>
+                      <th>Total Price</th>
+                      <th>Status</th>
+                      <th>Order Date</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order._id}>
+                        <td className="font-medium">{order.foodName}</td>
+                        <td>{order.quantity || 1}</td>
+                        <td className="font-semibold">${(order.totalPrice || order.price).toFixed(2)}</td>
+                        <td>
+                          <span className={`status-badge ${
+                            order.status === 'pending' ? 'status-pending' :
+                            order.status === 'preparing' ? 'status-preparing' :
+                            order.status === 'delivered' ? 'status-delivered' : ''
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="text-secondary">{new Date(order.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <div className="flex gap-2">
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => startEditOrder(order)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-sm btn-accent"
+                              onClick={() => handleDeleteOrder(order._id)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {editingOrderId && (
-                <div className="edit-form" style={{ marginTop: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '5px' }}>
-                  <h4>Update Order Quantity</h4>
-                  <label>
-                    Quantity:
+                <div className="card" style={{ marginTop: 'var(--space-6)' }}>
+                  <div className="card-header">
+                    <h3 className="card-title">Update Order Quantity</h3>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">New Quantity</label>
                     <input
+                      className="form-control"
                       type="number"
                       min="1"
                       value={editQuantity}
                       onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
-                      style={{ marginLeft: '10px', padding: '5px' }}
                     />
-                  </label>
-                  <br />
-                  <button 
-                    onClick={() => handleUpdateOrder(editingOrderId)}
-                    style={{ marginTop: '15px', marginRight: '10px', backgroundColor: '#4CAF50', color: 'white', padding: '8px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Save Changes
-                  </button>
-                  <button 
-                    onClick={() => setEditingOrderId(null)}
-                    style={{ marginTop: '15px', backgroundColor: '#f44336', color: 'white', padding: '8px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
+                  </div>
+                  <div className="form-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => handleUpdateOrder(editingOrderId)}
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setEditingOrderId(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
             </>
           )}
-        </section>
+          {(message.includes('updated') || message.includes('cancelled')) && (
+            <div className={`message ${message.includes('success') ? 'success' : 'error'} fade-in`}>
+              {message}
+            </div>
+          )}
+        </div>
 
-        <section className="card">
-          <h3>Send Feedback to Admin</h3>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">💬 Send Feedback</h2>
+            <p className="card-subtitle">Help us improve by sharing your experience</p>
+          </div>
           <form onSubmit={handleSubmitFeedback} className="form-grid">
-            <label>
-              Feedback Type
-              <select value={feedbackType} onChange={(e) => setFeedbackType(e.target.value)}>
-                <option value="delay">Delay Feedback</option>
+            <div className="form-group">
+              <label className="form-label">Feedback Type</label>
+              <select
+                className="form-select"
+                value={feedbackType}
+                onChange={(e) => setFeedbackType(e.target.value)}
+              >
+                <option value="delay">Order Delay</option>
                 <option value="quality">Food Quality</option>
                 <option value="service">Service</option>
                 <option value="other">Other</option>
               </select>
-            </label>
-            <label>
-              Rating (1-5)
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setFeedbackRating(star)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '24px',
-                      cursor: 'pointer',
-                      color: star <= feedbackRating ? '#ffd700' : '#ddd'
-                    }}
-                  >
-                    ★
-                  </button>
-                ))}
-                <span style={{ marginLeft: '10px' }}>{feedbackRating}/5</span>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Rating</label>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackRating(star)}
+                      className="text-2xl hover:scale-110 transition-transform"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: star <= feedbackRating ? '#ffd700' : '#e2e8f0'
+                      }}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+                <span className="text-secondary font-medium">{feedbackRating}/5 stars</span>
               </div>
-            </label>
-            <label>
-              Message
+            </div>
+            <div className="form-group">
+              <label className="form-label">Your Message</label>
               <textarea
+                className="form-control"
                 value={feedbackMessage}
                 onChange={(e) => setFeedbackMessage(e.target.value)}
-                placeholder="Please describe your feedback..."
+                placeholder="Please share your detailed feedback..."
                 rows="4"
                 required
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  resize: 'vertical'
-                }}
+                style={{ resize: 'vertical' }}
               />
-            </label>
-            <button type="submit">Submit Feedback</button>
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn btn-accent">Submit Feedback</button>
+            </div>
           </form>
-          {message && <div className="message">{message}</div>}
-        </section>
+          {message && message.includes('Feedback') && (
+            <div className={`message ${message.includes('success') ? 'success' : 'error'} fade-in`}>
+              {message}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
