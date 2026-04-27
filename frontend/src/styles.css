@@ -1,0 +1,238 @@
+:root {
+  font-family: Arial, sans-serif;
+  background: #f4f7fb;
+  color: #1f2937;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.page-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  max-width: 900px;
+  margin: 16px auto;
+}
+
+.hero-card {
+  padding: 24px;
+  background: #eef4ff;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.navbar {
+  background: #1d4ed8;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+}
+
+.navbar a {
+  color: #fff;
+  text-decoration: none;
+  margin-right: 12px;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.navbar-brand {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.page-content {
+  padding: 24px;
+}
+
+.login-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.login-toggle button {
+  flex: 1;
+  background: #e5e7eb;
+  color: #1f2937;
+  border: 1px solid transparent;
+}
+
+.login-toggle button.active {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.form-inline {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+button {
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.95;
+}
+
+.button-secondary {
+  background: #6b7280;
+}
+
+.message {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #e2e8f0;
+}
+
+.message.error {
+  background: #fee2e2;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+th,
+td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+  background: #f8fafc;
+}
+
+.summary-grid,
+.report-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.summary-card,
+.report-card {
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.btn-edit {
+  background: #3b82f6 !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+}
+
+.btn-edit:hover {
+  background: #2563eb !important;
+  opacity: 1 !important;
+}
+
+.btn-delete {
+  background: #ef4444 !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+}
+
+.btn-delete:hover {
+  background: #dc2626 !important;
+  opacity: 1 !important;
+}
+
+.status-completed {
+  color: #16a34a;
+  font-weight: bold;
+}
+
+.edit-form {
+  background: #f8fafc;
+  padding: 15px;
+  margin-top: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.edit-form label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.edit-form input {
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navbar-links {
+    flex-wrap: wrap;
+  }
+}

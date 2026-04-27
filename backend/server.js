@@ -1,0 +1,93 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
+
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const foodRoutes = require('./routes/food');
+const orderRoutes = require('./routes/orders');
+const User = require('./models/User');
+const Food = require('./models/Food');
+
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const PORT = process.env.PORT || 5000;
+
+if (!process.env.MONGO_URI) {
+  console.error('Missing MONGO_URI in .env');
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET) {
+  console.error('Missing JWT_SECRET in .env');
+  process.exit(1);
+}
+
+app.use('/api', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/food', foodRoutes);
+app.use('/api/orders', orderRoutes);
+
+app.get('/', (req, res) => {
+  res.send('FD Management System API is running');
+});
+
+app.use((req, res) => {
+  res.status(404).json({ message: 'Not found' });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  res.status(err.status || 500).json({ message: err.message || 'Server error' });
+});
+
+async function seedDefaultAdminAndFood() {
+  try {
+    const adminEmail = 'admin@school.com';
+    const existingAdmin = await User.findOne({ email: adminEmail });
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await User.create({
+        name: 'Admin User',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin'
+      });
+      console.log('Default admin created: admin@school.com / admin123');
+    }
+
+    const foodCount = await Food.countDocuments();
+    if (foodCount === 0) {
+      await Food.create([
+        { name: 'Cheese Sandwich', price: 4.5 },
+        { name: 'Fruit Salad', price: 3.0 },
+        { name: 'Veggie Pizza', price: 6.5 }
+      ]);
+      console.log('Sample food items seeded');
+    }
+  } catch (error) {
+    console.error('Seeding error:', error.message);
+  }
+}
+
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(() => {
+    console.log('Connected to MongoDB Atlas');
+    seedDefaultAdminAndFood();
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error.message);
+  });
