@@ -7,11 +7,13 @@ function AdminDashboard() {
   const [foodItems, setFoodItems] = useState([]);
   const [foodName, setFoodName] = useState('');
   const [price, setPrice] = useState('');
+  const [foodImage, setFoodImage] = useState(null);
   const [message, setMessage] = useState('');
   const [editingFoodId, setEditingFoodId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
+  const [editImage, setEditImage] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
 
   async function fetchUsers() {
@@ -108,22 +110,56 @@ function AdminDashboard() {
   async function handleAddFood(event) {
     event.preventDefault();
     setMessage('');
+
+    // Basic client-side validation
+    if (!foodName.trim()) {
+      setMessage('Food name is required');
+      return;
+    }
+    if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+      setMessage('Valid numeric price is required');
+      return;
+    }
+
     try {
+      const formData = new FormData();
+      formData.append('name', foodName.trim());
+      formData.append('price', price.toString()); // Send as string
+      if (foodImage) {
+        formData.append('image', foodImage);
+      }
+
+      console.log('Sending FormData:', {
+        name: foodName.trim(),
+        price: price.toString(),
+        hasImage: !!foodImage
+      });
+
       const response = await fetch('/api/food', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ name: foodName, price: Number(price) })
+        body: formData
       });
-      const data = await response.json();
+
+      let data;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = { message: await response.text() };
+      }
+
       if (response.ok) {
-        setMessage('Food item added');
+        setMessage('Food item added successfully');
         setFoodName('');
         setPrice('');
+        setFoodImage(null);
+        fetchFoodItems();
       } else {
-        setMessage(data.message || 'Could not add food');
+        setMessage(data.message || `Could not add food (${response.status})`);
+        console.error('Add food failed:', data);
       }
     } catch (error) {
       setMessage('Network error while adding food.');
@@ -176,6 +212,7 @@ function AdminDashboard() {
     setEditName(food.name);
     setEditPrice(food.price);
     setEditQuantity(food.quantity || 0);
+    setEditImage(null); // Reset image for new upload
     setMessage('');
   }
 
@@ -184,35 +221,71 @@ function AdminDashboard() {
     setEditName('');
     setEditPrice('');
     setEditQuantity('');
+    setEditImage(null);
     setMessage('');
   }
 
   async function handleUpdateFood(event) {
     event.preventDefault();
     setMessage('');
+
+    // Basic client-side validation
+    if (!editName.trim()) {
+      setMessage('Food name is required');
+      return;
+    }
+    if (!editPrice || isNaN(Number(editPrice)) || Number(editPrice) <= 0) {
+      setMessage('Valid numeric price is required');
+      return;
+    }
+    if (editQuantity < 0) {
+      setMessage('Quantity cannot be negative');
+      return;
+    }
+
     try {
+      const formData = new FormData();
+      formData.append('name', editName.trim());
+      formData.append('price', editPrice.toString()); // Send as string
+      formData.append('quantity', editQuantity.toString()); // Send as string
+      if (editImage) {
+        formData.append('image', editImage);
+      }
+
+      console.log('Sending update FormData:', {
+        name: editName.trim(),
+        price: editPrice.toString(),
+        quantity: editQuantity.toString(),
+        hasImage: !!editImage
+      });
+
       const response = await fetch(`/api/food/${editingFoodId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          name: editName,
-          price: Number(editPrice),
-          quantity: Number(editQuantity)
-        })
+        body: formData
       });
-      const data = await response.json();
+
+      let data;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = { message: await response.text() };
+      }
+
       if (response.ok) {
         setMessage('Food item updated successfully');
         setEditingFoodId(null);
         setEditName('');
         setEditPrice('');
         setEditQuantity('');
+        setEditImage(null);
         fetchFoodItems();
       } else {
-        setMessage(data.message || 'Could not update food');
+        setMessage(data.message || `Could not update food (${response.status})`);
+        console.error('Update food failed:', data);
       }
     } catch (error) {
       setMessage('Network error while updating food.');
@@ -298,6 +371,15 @@ function AdminDashboard() {
                 required
               />
             </div>
+            <div className="form-group">
+              <label className="form-label">Food Image</label>
+              <input
+                className="form-control"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFoodImage(e.target.files[0])}
+              />
+            </div>
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">Add Food Item</button>
             </div>
@@ -352,6 +434,15 @@ function AdminDashboard() {
                     type="number"
                     placeholder="0"
                     required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Update Image (optional)</label>
+                  <input
+                    className="form-control"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setEditImage(e.target.files[0])}
                   />
                 </div>
                 <div className="form-actions">

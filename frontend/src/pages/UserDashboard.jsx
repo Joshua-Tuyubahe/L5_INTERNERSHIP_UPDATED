@@ -205,25 +205,37 @@ function UserDashboard() {
             <h2 className="card-title">🍽️ Food Menu</h2>
             <p className="card-subtitle">Choose from our delicious selection</p>
           </div>
-          <form onSubmit={handleOrder} className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Select Food Item</label>
-              <select
-                className="form-select"
-                value={selectedFoodId}
-                onChange={(e) => setSelectedFoodId(e.target.value)}
-              >
-                {foodItems.map((food) => (
-                  <option key={food._id} value={food._id}>
-                    {food.name} - ${food.price.toFixed(2)}
-                  </option>
-                ))}
-              </select>
+          {foodItems.length === 0 ? (
+            <p className="text-secondary text-center">No food items available yet.</p>
+          ) : (
+            <div className="food-grid">
+              {foodItems.map((food) => (
+                <div key={food._id} className={`food-card ${selectedFoodId === food._id ? 'selected' : ''}`} onClick={() => setSelectedFoodId(food._id)}>
+                  <div className="food-image">
+                    {food.image ? (
+                      <img src={food.image} alt={food.name} />
+                    ) : (
+                      <div className="no-image">No Image</div>
+                    )}
+                  </div>
+                  <div className="food-info">
+                    <h3 className="food-name">{food.name}</h3>
+                    <p className="food-price">${food.price.toFixed(2)}</p>
+                    {selectedFoodId === food._id && (
+                      <div className="selected-indicator">Selected</div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">Place Order</button>
+          )}
+          {selectedFoodId && (
+            <div className="form-actions" style={{ marginTop: 'var(--space-4)' }}>
+              <button type="button" className="btn btn-primary" onClick={handleOrder}>
+                Place Order for {foodItems.find(f => f._id === selectedFoodId)?.name}
+              </button>
             </div>
-          </form>
+          )}
           {message && message.includes('Order placed') && (
             <div className="message success fade-in">{message}</div>
           )}
