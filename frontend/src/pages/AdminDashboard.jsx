@@ -16,6 +16,8 @@ function AdminDashboard() {
   const [editImage, setEditImage] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [orderMessage, setOrderMessage] = useState('');
+  const [orderMessageType, setOrderMessageType] = useState('success');
 
   function formatStatus(value) {
     const status = value ? value.toString().trim() : 'Pending';
@@ -183,7 +185,7 @@ function AdminDashboard() {
   async function handleStatusChange(orderId, newStatus) {
     const normalizedStatus = formatStatus(newStatus);
     setUpdatingOrderId(orderId);
-    setMessage('');
+    setOrderMessage('');
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
@@ -201,7 +203,8 @@ function AdminDashboard() {
           )
         );
         await fetchOrders();
-        setMessage('Order status updated successfully.');
+        setOrderMessageType('success');
+        setOrderMessage('Order status updated successfully');
       } else {
         let data;
         try {
@@ -209,10 +212,12 @@ function AdminDashboard() {
         } catch (_) {
           data = { message: await response.text() };
         }
-        setMessage(data.message || 'Unable to update status');
+        setOrderMessageType('error');
+        setOrderMessage(data.message || 'Unable to update status');
       }
     } catch (error) {
-      setMessage('Network error while updating order status.');
+      setOrderMessageType('error');
+      setOrderMessage('Network error while updating order status.');
       console.error('Update order status error:', error);
     } finally {
       setUpdatingOrderId(null);
@@ -575,8 +580,10 @@ function AdminDashboard() {
             <h2 className="card-title">📋 Order Management</h2>
             <p className="card-subtitle">Track and manage all customer orders</p>
           </div>
-          {message && message.includes('status') && (
-            <div className="message error fade-in" style={{ margin: '0 1rem 1rem' }}>{message}</div>
+          {orderMessage && (
+            <div className={`message ${orderMessageType} fade-in`} style={{ margin: '0 1rem 1rem' }}>
+              {orderMessage}
+            </div>
           )}
           {orders.length === 0 ? (
             <p className="text-secondary text-center">No orders placed yet.</p>

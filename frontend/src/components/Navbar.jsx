@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 function Navbar({ role }) {
   const navigate = useNavigate();
+  const isHome = !role;
 
   function handleLogout() {
     localStorage.clear();
@@ -9,23 +10,40 @@ function Navbar({ role }) {
   }
 
   return (
-    <header className="navbar">
-      <div className="navbar-content">
+    <header className={`navbar ${isHome ? 'navbar-home' : 'navbar-app'}`}>
+      <div className="navbar-inner">
         <Link to="/" className="navbar-brand">
-          FD Management
+          <span className="navbar-brand-icon">🍽️</span>
+          <span>FD Management System</span>
         </Link>
-        <nav className="navbar-links">
-          {role === 'admin' && (
-            <>
-              <Link to="/admin-dashboard" className="navbar-links-item">Dashboard</Link>
-              <Link to="/reports" className="navbar-links-item">Reports</Link>
-            </>
-          )}
-          {role === 'user' && <Link to="/user-dashboard" className="navbar-links-item">Menu</Link>}
-          <button className="btn btn-ghost" onClick={handleLogout}>
-            Logout
-          </button>
-        </nav>
+
+        {isHome ? (
+          <>
+            <div className="navbar-links">
+              <a href="#home">Home</a>
+              <a href="#foods">Foods</a>
+              <a href="#orders">Orders</a>
+              <a href="#about">About Us</a>
+              <a href="#contact">Contact</a>
+            </div>
+            <div className="navbar-actions">
+              <Link to="/login" className="btn btn-outline btn-sm">User Login</Link>
+              <Link to="/login" className="btn btn-orange btn-sm">Admin Login</Link>
+            </div>
+          </>
+        ) : (
+          <div className="navbar-actions navbar-app-actions">
+            {role === 'admin' && (
+              <Link to="/admin-dashboard" className="navbar-link">Dashboard</Link>
+            )}
+            {role === 'user' && (
+              <Link to="/user-dashboard" className="navbar-link">Menu</Link>
+            )}
+            <button className="btn btn-ghost" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
