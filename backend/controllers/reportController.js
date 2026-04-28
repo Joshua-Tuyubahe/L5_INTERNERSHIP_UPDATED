@@ -4,7 +4,7 @@ const Feedback = require('../models/Feedback');
 
 async function getReports(req, res) {
   try {
-    const { type } = req.query; // 'daily', 'weekly', 'annual'
+    const { type, startDate: queryStartDate, endDate: queryEndDate } = req.query; // 'daily', 'weekly', 'annual', 'custom'
     const now = new Date();
     let startDate, endDate;
 
@@ -25,8 +25,24 @@ async function getReports(req, res) {
         startDate = new Date(now.getFullYear(), 0, 1); // January 1st
         endDate = new Date(now.getFullYear() + 1, 0, 1); // January 1st next year
         break;
+      case 'custom':
+        if (!queryStartDate || !queryEndDate) {
+          return res.status(400).json({ message: 'For custom reports, startDate and endDate are required' });
+        }
+        startDate = new Date(queryStartDate);
+        endDate = new Date(queryEndDate);
+        // Add one day to endDate to include the entire end date
+        endDate.setDate(endDate.getDate() + 1);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD format' });
+        }
+        if (startDate >= endDate) {
+          return res.status(400).json({ message: 'Start date must be before end date' });
+        }
+        break;
       default:
-        return res.status(400).json({ message: 'Invalid report type. Use: daily, weekly, or annual' });
+        return res.status(400).json({ message: 'Invalid report type. Use: daily, weekly, annual, or custom' });
     }
 
     // Get orders within date range

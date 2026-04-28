@@ -57,18 +57,19 @@ app.use((err, req, res, next) => {
 
 async function seedDefaultAdminAndFood() {
   try {
-    const adminEmail = 'admin@school.com';
-    const existingAdmin = await User.findOne({ email: adminEmail });
-    if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await User.create({
+    const adminEmail = 'tuyubahejosue@outlook.com';
+    const hashedPassword = await bcrypt.hash('Josh@123', 10);
+    await User.findOneAndUpdate(
+      { email: adminEmail },
+      {
         name: 'Admin User',
         email: adminEmail,
         password: hashedPassword,
         role: 'admin'
-      });
-      console.log('Default admin created: admin@school.com / admin123');
-    }
+      },
+      { upsert: true, new: true }
+    );
+    console.log('Default admin set: tuyubahejosue@outlook.com / Josh@123');
 
     const foodCount = await Food.countDocuments();
     if (foodCount === 0) {
