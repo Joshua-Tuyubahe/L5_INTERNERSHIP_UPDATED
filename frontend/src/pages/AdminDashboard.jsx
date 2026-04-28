@@ -15,6 +15,16 @@ function AdminDashboard() {
   const [editQuantity, setEditQuantity] = useState('');
   const [editImage, setEditImage] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+  function formatStatus(value) {
+    const status = value ? value.toString().trim() : 'Pending';
+    const lower = status.toLowerCase();
+    if (lower === 'pending') return 'Pending';
+    if (lower === 'preparing') return 'Preparing';
+    if (lower === 'delivered') return 'Delivered';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
 
   async function fetchUsers() {
     try {
@@ -45,7 +55,10 @@ function AdminDashboard() {
         return;
       }
       const data = await response.json();
-      setOrders(data);
+      setOrders(data.map((order) => ({
+        ...order,
+        status: formatStatus(order.status)
+      })));
     } catch (error) {
       setMessage('Network error while loading orders.');
       console.error('Fetch admin orders error:', error);
@@ -168,6 +181,9 @@ function AdminDashboard() {
   }
 
   async function handleStatusChange(orderId, newStatus) {
+    const normalizedStatus = formatStatus(newStatus);
+    setUpdatingOrderId(orderId);
+    setMessage('');
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
@@ -175,17 +191,31 @@ function AdminDashboard() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: normalizedStatus })
       });
+
       if (response.ok) {
-        fetchOrders();
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order._id === orderId ? { ...order, status: normalizedStatus } : order
+          )
+        );
+        await fetchOrders();
+        setMessage('Order status updated successfully.');
       } else {
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (_) {
+          data = { message: await response.text() };
+        }
         setMessage(data.message || 'Unable to update status');
       }
     } catch (error) {
       setMessage('Network error while updating order status.');
       console.error('Update order status error:', error);
+    } finally {
+      setUpdatingOrderId(null);
     }
   }
 
@@ -545,6 +575,9 @@ function AdminDashboard() {
             <h2 className="card-title">📋 Order Management</h2>
             <p className="card-subtitle">Track and manage all customer orders</p>
           </div>
+          {message && message.includes('status') && (
+            <div className="message error fade-in" style={{ margin: '0 1rem 1rem' }}>{message}</div>
+          )}
           {orders.length === 0 ? (
             <p className="text-secondary text-center">No orders placed yet.</p>
           ) : (
@@ -570,13 +603,14 @@ function AdminDashboard() {
                       <td>
                         <select
                           className="form-select"
-                          value={order.status}
+                          value={order.status || 'Pending'}
                           onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                          disabled={updatingOrderId === order._id}
                           style={{ minWidth: '120px' }}
                         >
-                          <option value="pending">Pending</option>
-                          <option value="preparing">Preparing</option>
-                          <option value="delivered">Delivered</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Preparing">Preparing</option>
+                          <option value="Delivered">Delivered</option>
                         </select>
                       </td>
                       <td>

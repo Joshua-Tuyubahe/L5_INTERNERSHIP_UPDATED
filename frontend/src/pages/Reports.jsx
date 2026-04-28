@@ -2,17 +2,23 @@ import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar.jsx';
 
 function Reports() {
-  const [reportType, setReportType] = useState('daily');
+  const [reportType, setReportType] = useState('custom');
   const [reportData, setReportData] = useState(null);
   const [message, setMessage] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const mostOrderedFood = reportData?.foodStats?.reduce((best, item) => {
     return item.totalQuantity > (best.totalQuantity || 0) ? item : best;
   }, { name: 'No orders yet', totalQuantity: 0 });
 
-  async function fetchReports(type = reportType) {
+  async function fetchReports(type = reportType, start = startDate, end = endDate) {
     try {
-      const response = await fetch(`/api/reports?type=${type}`, {
+      let url = `/api/reports?type=${type}`;
+      if (type === 'custom' && start && end) {
+        url += `&startDate=${start}&endDate=${end}`;
+      }
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) {
@@ -30,13 +36,29 @@ function Reports() {
   }
 
   useEffect(() => {
-    fetchReports();
+    if (reportType !== 'custom') {
+      fetchReports();
+    }
   }, []);
 
   async function handleReportTypeChange(event) {
     const newType = event.target.value;
     setReportType(newType);
-    await fetchReports(newType);
+    if (newType !== 'custom') {
+      await fetchReports(newType);
+    }
+  }
+
+  async function handleGenerateCustomReport() {
+    if (!startDate || !endDate) {
+      setMessage('Please select both start and end dates for the custom report.');
+      return;
+    }
+    if (new Date(startDate) > new Date(endDate)) {
+      setMessage('Start date cannot be after end date.');
+      return;
+    }
+    await fetchReports('custom', startDate, endDate);
   }
 
   return (
@@ -64,11 +86,45 @@ function Reports() {
                 onChange={handleReportTypeChange}
                 style={{ minWidth: '150px' }}
               >
-                <option value="daily">Daily Report</option>
+                <option value="custom">Custom Report</option>
                 <option value="weekly">Weekly Report</option>
                 <option value="annual">Annual Report</option>
               </select>
             </div>
+            {reportType === 'custom' && (
+              <div className="flex items-center gap-4" style={{ marginTop: 'var(--space-4)' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ marginBottom: 'var(--space-2)' }}>Start Date:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    style={{ minWidth: '150px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ marginBottom: 'var(--space-2)' }}>End Date:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    style={{ minWidth: '150px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0, display: 'flex', alignItems: 'end' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleGenerateCustomReport}
+                    style={{ height: '40px' }}
+                  >
+                    Generate Report
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {message && <div className="message error fade-in">{message}</div>}
