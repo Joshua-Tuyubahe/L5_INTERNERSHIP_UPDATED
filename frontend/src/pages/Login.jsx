@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
-  const [role, setRole] = useState('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -16,16 +15,15 @@ function Login() {
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role })
+        body: JSON.stringify({ email, password })
       });
       const data = await response.json();
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
         localStorage.setItem('name', data.name);
-        if (data.role === 'admin') {
-          navigate('/admin-dashboard');
+        if (data.redirectTo) {
+          navigate(data.redirectTo);
         } else {
           navigate('/user-dashboard');
         }
@@ -41,29 +39,10 @@ function Login() {
   return (
     <div className="page-center">
       <div className="card">
-        <div className="flex gap-2 mb-4">
-          <button
-            type="button"
-            className={`btn ${role === 'user' ? 'btn-primary' : 'btn-secondary'} flex-1`}
-            onClick={() => setRole('user')}
-          >
-            User Login
-          </button>
-          <button
-            type="button"
-            className={`btn ${role === 'admin' ? 'btn-primary' : 'btn-secondary'} flex-1`}
-            onClick={() => setRole('admin')}
-          >
-            Admin Login
-          </button>
-        </div>
-
         <div className="card-header">
-          <h1 className="card-title">{role === 'admin' ? 'Admin Login' : 'User Login'}</h1>
+          <h1 className="card-title">Login</h1>
           <p className="card-subtitle">
-            {role === 'admin'
-              ? 'Sign in with your admin credentials to access the admin dashboard.'
-              : 'Sign in to your account.'}
+            Sign in with your email and password to continue.
           </p>
         </div>
 

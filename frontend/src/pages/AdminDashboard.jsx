@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
+import StarRating from '../components/StarRating.jsx';
+import Toast from '../components/Toast.jsx';
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -9,6 +12,12 @@ function AdminDashboard() {
   const [price, setPrice] = useState('');
   const [foodImage, setFoodImage] = useState(null);
   const [message, setMessage] = useState('');
+  const [userError, setUserError] = useState('');
+  const [toast, setToast] = useState({ message: '', type: 'success', visible: false });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [showDeleteFoodModal, setShowDeleteFoodModal] = useState(false);
+  const [foodToDelete, setFoodToDelete] = useState(null);
   const [editingFoodId, setEditingFoodId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
@@ -20,12 +29,12 @@ function AdminDashboard() {
   const [orderMessageType, setOrderMessageType] = useState('success');
 
   function formatStatus(value) {
-    const status = value ? value.toString().trim() : 'Pending';
-    const lower = status.toLowerCase();
-    if (lower === 'pending') return 'Pending';
-    if (lower === 'preparing') return 'Preparing';
-    if (lower === 'delivered') return 'Delivered';
-    return status.charAt(0).toUpperCase() + status.slice(1);
+    const statusMap = { 0: 'Pending', 1: 'Preparing', 2: 'Delivered', 'pending': 'Pending', 'preparing': 'Preparing', 'delivered': 'Delivered' };
+    const lower = (value || '').toString().toLowerCase();
+    if (lower === 'pending' || value === 0) return 'Pending';
+    if (lower === 'preparing' || value === 1) return 'Preparing';
+    if (lower === 'delivered' || value === 2) return 'Delivered';
+    return value ? value.toString().charAt(0).toUpperCase() + value.toString().slice(1) : 'Pending';
   }
 
   async function fetchUsers() {
@@ -184,6 +193,7 @@ function AdminDashboard() {
 
   async function handleStatusChange(orderId, newStatus) {
     const normalizedStatus = formatStatus(newStatus);
+    console.log('Updating order', orderId, 'to status', normalizedStatus, '(sending', normalizedStatus, ')');
     setUpdatingOrderId(orderId);
     setOrderMessage('');
     try {
@@ -195,8 +205,11 @@ function AdminDashboard() {
         },
         body: JSON.stringify({ status: normalizedStatus })
       });
+      console.log('Update response status:', response.status, 'statusText:', response.statusText);
 
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('Update response data:', responseData);
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
             order._id === orderId ? { ...order, status: normalizedStatus } : order
@@ -212,6 +225,7 @@ function AdminDashboard() {
         } catch (_) {
           data = { message: await response.text() };
         }
+        console.log('Update response error:', data);
         setOrderMessageType('error');
         setOrderMessage(data.message || 'Unable to update status');
       }
@@ -240,6 +254,75 @@ function AdminDashboard() {
       setMessage('Network error while deleting order.');
       console.error('Delete order error:', error);
     }
+  }
+
+  const navigate = useNavigate();
+
+  function getCurrentUserId() {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.id || payload._id || null;
+    } catch (error) {
+      console.error('Token parse error:', error);
+      return null;
+    }
+  }
+
+  function showToast(message, type = 'success') {
+    setToast({ message, type, visible: true });
+  }
+
+  function hideToast() {
+    setToast((prev) => ({ ...prev, visible: false }));
+  }
+
+  async function handleDeleteUser(userId) {
+    setUserToDelete(userId);
+    setShowDeleteModal(true);
+  }
+
+  async function confirmDeleteUser() {
+    if (!userToDelete) return;
+
+    try {
+      const response = await fetch(`/api/users/${userToDelete}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setUserError('');
+        if (data.deletedUserId && data.deletedUserId === getCurrentUserId()) {
+          showToast('out of system', 'error');
+          setTimeout(() => {
+            localStorage.clear();
+            navigate('/register');
+          }, 1000);
+          return;
+        }
+        await Promise.all([fetchUsers(), fetchOrders()]);
+        showToast('User deleted successfully', 'success');
+      } else {
+        if (data.isSelfDelete) {
+          showToast('Cannot delete admin', 'error');
+        } else {
+          showToast(data.message || 'Unable to delete user', 'error');
+        }
+      }
+    } catch (error) {
+      setUserError('Network error while deleting user.');
+      console.error('Delete user error:', error);
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    }
+  }
+
+  function cancelDeleteUser() {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   }
 
   function handleEditFood(food) {
@@ -329,36 +412,67 @@ function AdminDashboard() {
   }
 
   async function handleDeleteFood(foodId) {
-    if (window.confirm('Are you sure you want to delete this food item?')) {
-      try {
-        const response = await fetch(`/api/food/${foodId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (response.ok) {
-          setMessage('Food item deleted successfully');
-          fetchFoodItems();
-        } else {
-          const data = await response.json();
-          setMessage(data.message || 'Unable to delete food');
-        }
-      } catch (error) {
-        setMessage('Network error while deleting food.');
-        console.error('Delete food error:', error);
+    setFoodToDelete(foodId);
+    setShowDeleteFoodModal(true);
+  }
+
+  async function confirmDeleteFood() {
+    if (!foodToDelete) return;
+    
+    try {
+      const response = await fetch(`/api/food/${foodToDelete}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.ok) {
+        await Promise.all([fetchFoodItems(), fetchOrders()]);
+        showToast('Food item deleted successfully', 'success');
+      } else {
+        const data = await response.json();
+        showToast(data.message || 'Unable to delete food', 'error');
       }
+    } catch (error) {
+      setMessage('Network error while deleting food.');
+      console.error('Delete food error:', error);
+    } finally {
+      setShowDeleteFoodModal(false);
+      setFoodToDelete(null);
     }
+  }
+
+  function cancelDeleteFood() {
+    setShowDeleteFoodModal(false);
+    setFoodToDelete(null);
   }
 
   const totalRevenue = orders.reduce((sum, order) => sum + (order.totalPrice || order.price), 0);
 
   return (
     <div>
-      <Navbar role="admin" />
+      <Navbar />
       <div className="page-content">
         <div className="hero-card fade-in">
           <h1>Admin Dashboard</h1>
           <p>Manage your food delivery system efficiently</p>
         </div>
+
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <div className="card-header">
+            <h2 className="card-title">Navigation</h2>
+          </div>
+          <div style={{ padding: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <Link to="/admin-dashboard" className="btn btn-primary">Dashboard</Link>
+            <Link to="/reports" className="btn btn-secondary">Reports</Link>
+          </div>
+        </div>
+
+        <Toast message={toast.message} type={toast.type} visible={toast.visible} onClose={hideToast} />
+
+        {message && (
+          <div className={`message ${message.includes('success') || message.includes('deleted successfully') || message.includes('added successfully') || message.includes('updated successfully') ? 'success' : 'error'} fade-in`} style={{ marginBottom: '2rem' }}>
+            {message}
+          </div>
+        )}
 
         <div className="report-grid">
           <div className="stat-card">
@@ -419,12 +533,6 @@ function AdminDashboard() {
               <button type="submit" className="btn btn-primary">Add Food Item</button>
             </div>
           </form>
-          {message && message.includes('Food item added') && (
-            <div className="message success fade-in">{message}</div>
-          )}
-          {message && !message.includes('Food item added') && !message.includes('updated') && !message.includes('deleted') && (
-            <div className="message error fade-in">{message}</div>
-          )}
         </div>
 
         <div className="card">
@@ -531,11 +639,6 @@ function AdminDashboard() {
               )}
             </>
           )}
-          {(message.includes('updated') || message.includes('deleted')) && (
-            <div className={`message ${message.includes('success') ? 'success' : 'error'} fade-in`}>
-              {message}
-            </div>
-          )}
         </div>
 
         <div className="card">
@@ -543,6 +646,11 @@ function AdminDashboard() {
             <h2 className="card-title">👥 Registered Users</h2>
             <p className="card-subtitle">Overview of all user accounts</p>
           </div>
+          {userError && (
+            <div className="message error fade-in" style={{ margin: '0 1rem 1rem' }}>
+              {userError}
+            </div>
+          )}
           {users.length === 0 ? (
             <p className="text-secondary text-center">No users registered yet.</p>
           ) : (
@@ -553,6 +661,7 @@ function AdminDashboard() {
                     <th>Full Name</th>
                     <th>Email Address</th>
                     <th>Role</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -566,6 +675,14 @@ function AdminDashboard() {
                         }`}>
                           {user.role}
                         </span>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-accent"
+                          onClick={() => handleDeleteUser(user._id)}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -666,19 +783,7 @@ function AdminDashboard() {
                       </td>
                       <td>
                         <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span
-                                key={star}
-                                className="text-lg"
-                                style={{
-                                  color: star <= feedback.rating ? '#ffd700' : '#e2e8f0'
-                                }}
-                              >
-                                ★
-                              </span>
-                            ))}
-                          </div>
+                          <StarRating rating={feedback.rating} readonly={true} size="20px" />
                           <span className="text-secondary font-medium">{feedback.rating}/5</span>
                         </div>
                       </td>
@@ -694,6 +799,92 @@ function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'flex-end',
+          padding: '1rem',
+          zIndex: 1000
+        }}>
+          <div className="modal-content" style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            marginTop: '1rem'
+          }}>
+            <h3 style={{ marginTop: 0, color: '#dc3545' }}>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={cancelDeleteUser} 
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-accent" 
+                onClick={confirmDeleteUser}
+              >
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteFoodModal && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'flex-end',
+          padding: '1rem',
+          zIndex: 1000
+        }}>
+          <div className="modal-content" style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            marginTop: '1rem'
+          }}>
+            <h3 style={{ marginTop: 0, color: '#dc3545' }}>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this food item?</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={cancelDeleteFood}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-accent" 
+                onClick={confirmDeleteFood}
+              >
+                Delete Food
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

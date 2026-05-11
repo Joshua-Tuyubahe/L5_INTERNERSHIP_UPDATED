@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
+import StarRating from '../components/StarRating.jsx';
 
 function Reports() {
-  const [reportType, setReportType] = useState('custom');
+  const [reportType, setReportType] = useState('daily');
   const [reportData, setReportData] = useState(null);
   const [message, setMessage] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -24,6 +26,7 @@ function Reports() {
       if (!response.ok) {
         const errorData = await response.json();
         setMessage(errorData.message || 'Error loading report');
+        setTimeout(() => setMessage(''), 3000);
         return;
       }
       const data = await response.json();
@@ -31,6 +34,7 @@ function Reports() {
       setMessage('');
     } catch (error) {
       setMessage('Network error while loading report.');
+      setTimeout(() => setMessage(''), 3000);
       console.error('Fetch reports error:', error);
     }
   }
@@ -39,7 +43,7 @@ function Reports() {
     if (reportType !== 'custom') {
       fetchReports();
     }
-  }, []);
+  }, [reportType]);
 
   async function handleReportTypeChange(event) {
     const newType = event.target.value;
@@ -51,26 +55,41 @@ function Reports() {
 
   async function handleGenerateCustomReport() {
     if (!startDate || !endDate) {
-      setMessage('Please select both start and end dates for the custom report.');
+      setTimeout(() => setMessage(''), 3000);
       return;
     }
     if (new Date(startDate) > new Date(endDate)) {
       setMessage('Start date cannot be after end date.');
+      setTimeout(() => setMessage(''), 3000);
       return;
     }
     await fetchReports('custom', startDate, endDate);
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
   return (
     <div>
-      <Navbar role="admin" />
+      <Navbar />
       <div className="page-content">
-        <div className="hero-card fade-in">
+        <div className="hero-card fade-in no-print">
           <h1>📊 Analytics Dashboard</h1>
           <p>Comprehensive insights into your food delivery operations</p>
         </div>
 
-        <div className="card">
+        <div className="card no-print" style={{ marginBottom: '2rem' }}>
+          <div className="card-header">
+            <h2 className="card-title">Navigation</h2>
+          </div>
+          <div style={{ padding: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <Link to="/admin-dashboard" className="btn btn-primary">Dashboard</Link>
+            <button onClick={handlePrint} className="btn btn-secondary">Print Report</button>
+          </div>
+        </div>
+
+        <div className="card" id="report-print-area">
           <div className="card-header">
             <h2 className="card-title">📈 Performance Reports</h2>
             <p className="card-subtitle">Track your business metrics and customer feedback</p>
@@ -86,6 +105,7 @@ function Reports() {
                 onChange={handleReportTypeChange}
                 style={{ minWidth: '150px' }}
               >
+                <option value="daily">Daily Report</option>
                 <option value="custom">Custom Report</option>
                 <option value="weekly">Weekly Report</option>
                 <option value="annual">Annual Report</option>
@@ -226,20 +246,8 @@ function Reports() {
                             <td className="font-semibold">{feedback.count}</td>
                             <td>
                               <div className="flex items-center gap-2">
+                                <StarRating rating={Math.round(feedback.averageRating)} readonly={true} size="16px" />
                                 <span className="font-semibold">{feedback.averageRating.toFixed(1)}/5</span>
-                                <div className="flex gap-1">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <span
-                                      key={star}
-                                      className="text-sm"
-                                      style={{
-                                        color: star <= Math.round(feedback.averageRating) ? '#ffd700' : '#e2e8f0'
-                                      }}
-                                    >
-                                      ★
-                                    </span>
-                                  ))}
-                                </div>
                               </div>
                             </td>
                           </tr>
@@ -277,9 +285,9 @@ function Reports() {
                             <td className="text-secondary">{order.userId?.name || 'Unknown'}</td>
                             <td>
                               <span className={`status-badge ${
-                                order.status === 'pending' ? 'status-pending' :
-                                order.status === 'preparing' ? 'status-preparing' :
-                                order.status === 'delivered' ? 'status-delivered' : ''
+                                order.status.toLowerCase() === 'pending' ? 'status-pending' :
+                                order.status.toLowerCase() === 'preparing' ? 'status-preparing' :
+                                order.status.toLowerCase() === 'delivered' ? 'status-delivered' : ''
                               }`}>
                                 {order.status}
                               </span>
@@ -321,20 +329,8 @@ function Reports() {
                             </td>
                             <td>
                               <div className="flex items-center gap-2">
+                                <StarRating rating={feedback.rating} readonly={true} size="16px" />
                                 <span className="font-semibold">{feedback.rating}/5</span>
-                                <div className="flex gap-1">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <span
-                                      key={star}
-                                      className="text-sm"
-                                      style={{
-                                        color: star <= feedback.rating ? '#ffd700' : '#e2e8f0'
-                                      }}
-                                    >
-                                      ★
-                                    </span>
-                                  ))}
-                                </div>
                               </div>
                             </td>
                             <td style={{ maxWidth: '300px', wordWrap: 'break-word' }} className="text-secondary">
